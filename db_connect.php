@@ -2,17 +2,22 @@
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
-// --- MODIFIED: Read credentials from Environment Variables ---
-$servername = getenv('DB_HOST');
-$username = getenv('DB_USER');
-$password = getenv('DB_PASS');
-$dbname = getenv('DB_NAME');
+// Read credentials from Environment Variables
+$host = getenv('DB_HOST');
+$user = getenv('DB_USER');
+$pass = getenv('DB_PASS');
+$db = getenv('DB_NAME');
+$port = "5432"; // Default PostgreSQL port
 
-// The Render PostgreSQL connection requires SSL
-$conn = new mysqli($servername, $username, $password, $dbname, null, null, MYSQLI_CLIENT_SSL);
+// --- FIX: Use PDO for a PostgreSQL connection ---
+// Create a Data Source Name (DSN) string
+$dsn = "pgsql:host=$host;port=$port;dbname=$db";
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+try {
+    // Create a new PDO instance
+    $conn = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+} catch (PDOException $e) {
+    // If the connection fails, stop the script and show the error.
+    die("Connection failed: " . $e->getMessage());
 }
 ?>
