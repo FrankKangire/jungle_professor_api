@@ -1,38 +1,31 @@
 <?php
+// FILE: signup.php
+
 include 'db_connect.php';
 
 $username = $_POST['username'];
 $password = $_POST['password'];
 
-// Hashing the password is a critical security step.
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-// Check if username already exists
+// First, check if the user exists
 $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$stmt->store_result();
+$stmt->execute([$username]);
+$user = $stmt->fetch();
 
-if ($stmt->num_rows > 0) {
+if ($user) {
     echo json_encode(["status" => "error", "message" => "Username already exists."]);
 } else {
     // Insert new user
     $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-    $stmt->bind_param("ss", $username, $hashed_password);
-    if ($stmt->execute()) {
-        // --- MODIFICATION ---
-        // Instead of a generic message, return the same response as a successful login.
-        // This tells the app that the user is now authenticated.
+    if ($stmt->execute([$username, $hashed_password])) {
         echo json_encode([
             "status" => "success", 
             "username" => $username, 
             "message" => "Signup successful!"
         ]);
     } else {
-        echo json_encode(["status" => "error", "message" => "Error: " . $stmt->error]);
+        echo json_encode(["status" => "error", "message" => "Error during signup."]);
     }
 }
-
-$stmt->close();
-$conn->close();
 ?>

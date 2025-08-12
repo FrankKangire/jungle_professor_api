@@ -1,21 +1,15 @@
 <?php
+// FILE: get_results.php
+
 include 'db_connect.php';
 
-// The username is sent from Flutter as a GET parameter
 $username = $_GET['username'];
 
 $stmt = $conn->prepare("SELECT gr.id, gr.created_at FROM game_results gr JOIN users u ON gr.user_id = u.id WHERE u.username = ? ORDER BY gr.created_at DESC");
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$result = $stmt->get_result();
+$stmt->execute([$username]);
 
-$results = [];
-while ($row = $result->fetch_assoc()) {
-    $results[] = $row;
-}
+// fetchAll() gets all matching rows into an array
+$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 echo json_encode(["status" => "success", "data" => $results]);
-
-$stmt->close();
-$conn->close();
 ?>

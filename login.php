@@ -1,17 +1,21 @@
 <?php
-include 'db_connect.php';
+// FILE: login.php
+
+include 'db_connect.php'; // This now provides a PDO connection object named $conn
 
 $username = $_POST['username'];
 $password = $_POST['password'];
 
+// PDO uses '?' as placeholders
 $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE username = ?");
-$stmt->bind_param("s", $username);
-$stmt->execute();
-$result = $stmt->get_result();
+// Pass parameters in an array to execute()
+$stmt->execute([$username]); 
 
-if ($result->num_rows > 0) {
-    $user = $result->fetch_assoc();
-    // Verify the password against the stored hash
+// fetch() gets a single row
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if ($user) {
+    // password_verify works the same way
     if (password_verify($password, $user['password'])) {
         echo json_encode(["status" => "success", "username" => $user['username']]);
     } else {
@@ -20,7 +24,4 @@ if ($result->num_rows > 0) {
 } else {
     echo json_encode(["status" => "error", "message" => "User not found."]);
 }
-
-$stmt->close();
-$conn->close();
 ?>
