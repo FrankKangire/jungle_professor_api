@@ -70,6 +70,7 @@ wss.on("connection", (ws) => {
             }
         }
 
+        // --- CORRECTED 'play' METHOD WITH DELAY ---
         if (data.method === "play") {
             const { gameId, clientId } = data;
             const game = games[gameId];
@@ -82,10 +83,13 @@ wss.on("connection", (ws) => {
             game.state[currentPlayer.player].steps += diceRoll;
             game.state.lastDiceRoll = { player: currentPlayer.player, roll: diceRoll };
             
+            // 1. First, send an update to EVERYONE so they see the move.
             game.state.lastEvent = `Player ${currentPlayer.player.toUpperCase()} rolled a ${diceRoll}.`;
             broadcastUpdate(gameId);
 
+            // 2. After a delay, start the quiz for the current player.
             setTimeout(() => {
+                // Check if the game still exists (a player might have disconnected during the delay)
                 if (!games[gameId]) return;
 
                 const questionSet = shuffleArray([...questionPool]).slice(0, QUESTIONS_PER_TURN);
@@ -104,10 +108,12 @@ wss.on("connection", (ws) => {
                     totalQuestions: QUESTIONS_PER_TURN
                 };
 
+                // Send the question only to the player whose turn it is
                 if(clients[clientId]) {
                     clients[clientId].connection.send(JSON.stringify(askPayload));
                 }
 
+                // Also update the event text for the other players to see
                 game.state.lastEvent = `Player ${currentPlayer.player.toUpperCase()} is starting a quiz...`;
                 broadcastUpdate(gameId);
 
